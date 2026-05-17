@@ -10,16 +10,16 @@
     }
 
     const statusBadge: Record<Task['status'], { labelColor: string; bgColor: string }> = {
-        todo:  { labelColor: 'text-white', bgColor: 'bg-[#3B4DE0]' },
-        doing: { labelColor: 'text-white', bgColor: 'bg-[#3B4DE0]' },
-        done:  { labelColor: 'text-white', bgColor: 'bg-[#22C55E]' },
+        todo:  { labelColor: 'text-black', bgColor: 'bg-gray-200'  },
+        doing: { labelColor: 'text-white', bgColor: 'bg-blue-500'  },
+        done:  { labelColor: 'text-white', bgColor: 'bg-green-500' },
     }
 
     const priorityBadge: Record<Task['priority'], { label: string; labelColor: string; bgColor: string }> = {
-        urgent: { label: 'Urgent', labelColor: 'text-white',    bgColor: 'bg-[#F97316]' },
-        high:   { label: 'High',   labelColor: 'text-black',    bgColor: 'bg-[#FACC15]' },
-        medium: { label: 'Medium', labelColor: 'text-gray-700', bgColor: 'bg-[#E5E7EB]' },
-        low:    { label: 'Low',    labelColor: 'text-gray-500', bgColor: 'bg-[#F3F4F6]' },
+        urgent: { label: 'Urgent', labelColor: 'text-white', bgColor: 'bg-red-500'    },
+        high:   { label: 'High',   labelColor: 'text-white', bgColor: 'bg-orange-500' },
+        medium: { label: 'Medium', labelColor: 'text-black', bgColor: 'bg-yellow-400' },
+        low:    { label: 'Low',    labelColor: 'text-black', bgColor: 'bg-blue-200'   },
     }
 
     function formatDate(dateStr: string) {
@@ -63,9 +63,10 @@
     const emit = defineEmits<{
         (e: 'clickTask', task: Task): void
         (e: 'deleteTask', task: Task): void
-        (e: 'dropTask', taskId: string): void
+        (e: 'dropTask', taskId: string, targetStatus: Task['status']): void
     }>()
 
+    // ── Desktop drag & drop ──────────────────────────────────────────
     const isDragOver = ref(false)
 
     function onDragStart(e: DragEvent, task: Task) {
@@ -87,13 +88,76 @@
         e.preventDefault()
         isDragOver.value = false
         const taskId = e.dataTransfer?.getData('taskId')
-        if (taskId) emit('dropTask', taskId)
+        if (taskId) emit('dropTask', taskId, props.status)
+    }
+
+    // ── Touch drag & drop ────────────────────────────────────────────
+    // Module-level state so listeners survive across component instances
+    let _ghost: HTMLElement | null = null
+    let _dragTaskId: string | null = null
+
+    function getTargetStatus(x: number, y: number): Task['status'] | null {
+        if (_ghost) _ghost.style.display = 'none'
+        const el = document.elementFromPoint(x, y)
+        if (_ghost) _ghost.style.display = ''
+        const col = el?.closest('[data-status]')
+        return (col?.getAttribute('data-status') as Task['status']) ?? null
+    }
+
+    function onTouchStart(e: TouchEvent, task: Task) {
+        // Don't interfere with taps — only activate after slight move (handled in move)
+        const touch = e.touches[0]
+        const src   = e.currentTarget as HTMLElement
+        _dragTaskId = task.id
+
+        _ghost = src.cloneNode(true) as HTMLElement
+        Object.assign(_ghost.style, {
+            position:     'fixed',
+            pointerEvents:'none',
+            opacity:      '0.85',
+            zIndex:       '9999',
+            width:        src.offsetWidth + 'px',
+            left:         touch.clientX - src.offsetWidth / 2 + 'px',
+            top:          touch.clientY - src.offsetHeight / 2 + 'px',
+            boxShadow:    '0 8px 24px rgba(0,0,0,0.18)',
+            borderRadius: '6px',
+            transform:    'scale(1.03)',
+        })
+        document.body.appendChild(_ghost)
+
+        function onMove(ev: TouchEvent) {
+            ev.preventDefault()
+            const t = ev.touches[0]
+            if (!_ghost) return
+            _ghost.style.left = t.clientX - _ghost.offsetWidth  / 2 + 'px'
+            _ghost.style.top  = t.clientY - _ghost.offsetHeight / 2 + 'px'
+        }
+
+        function onEnd(ev: TouchEvent) {
+            document.removeEventListener('touchmove', onMove)
+            document.removeEventListener('touchend',  onEnd)
+
+            const t = ev.changedTouches[0]
+            const targetStatus = getTargetStatus(t.clientX, t.clientY)
+
+            _ghost?.remove()
+            _ghost = null
+
+            if (_dragTaskId && targetStatus && targetStatus !== props.status) {
+                emit('dropTask', _dragTaskId, targetStatus)
+            }
+            _dragTaskId = null
+        }
+
+        document.addEventListener('touchmove', onMove, { passive: false })
+        document.addEventListener('touchend',  onEnd)
     }
 </script>
 
 <template>
     <div
-        class="flex flex-col gap-3 flex-1 min-w-[200px] rounded-lg transition-colors duration-150"
+        :data-status="status"
+        class="flex flex-col gap-3 w-full md:flex-1 md:min-w-[200px] rounded-lg transition-colors duration-150"
         :class="isDragOver ? 'bg-blue-50 ring-2 ring-blue-200' : ''"
         @dragover="onDragOver"
         @dragleave="onDragLeave"
@@ -113,6 +177,7 @@
                 :key="task.id"
                 draggable="true"
                 @dragstart="onDragStart($event, task)"
+                @touchstart="onTouchStart($event, task)"
                 class="cursor-grab active:cursor-grabbing"
             >
                 <TaskItem

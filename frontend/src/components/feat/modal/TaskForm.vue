@@ -30,13 +30,18 @@
     const priority    = ref<TaskPriority | ''>('')
     const dueDate     = ref('')
 
+    const titleError    = ref('')
+    const priorityError = ref('')
+
     watch(() => props.visible, (val) => {
         if (val) {
-            title.value       = ''
-            description.value = ''
-            status.value      = props.defaultStatus ?? 'todo'
-            priority.value    = ''
-            dueDate.value     = ''
+            title.value         = ''
+            description.value   = ''
+            status.value        = props.defaultStatus ?? 'todo'
+            priority.value      = ''
+            dueDate.value       = ''
+            titleError.value    = ''
+            priorityError.value = ''
         }
     })
 
@@ -54,7 +59,9 @@
     ]
 
     function handleConfirm() {
-        if (!title.value.trim() || !priority.value) return
+        titleError.value    = title.value.trim()  ? '' : 'Title is required'
+        priorityError.value = priority.value       ? '' : 'Priority is required'
+        if (titleError.value || priorityError.value) return
         emit('confirm', {
             title:       title.value.trim(),
             description: description.value.trim(),
@@ -72,14 +79,15 @@
 
 <template>
     <BaseModal :visible="visible" @close="handleClose">
-        <div class="flex flex-col gap-6 w-[480px]">
+        <div class="flex flex-col w-full min-h-0 flex-1">
             <Header title="New Task" title-color="text-[#000000]" />
 
-            <div class="flex flex-col gap-4">
+            <div class="flex flex-col gap-4 overflow-y-auto flex-1 mt-4">
                 <InputForm
                     title="Title"
                     placeholder="Task title"
                     v-model="title"
+                    :error="titleError"
                 />
 
                 <InputForm
@@ -88,7 +96,7 @@
                     v-model="description"
                 />
 
-                <div class="flex flex-row gap-4">
+                <div class="grid grid-cols-3 sm:flex-row gap-4">
                     <DropdownForm
                         title="Status"
                         placeholder="Select"
@@ -100,6 +108,7 @@
                         placeholder="Select"
                         :options="priorityOptions"
                         v-model="priority"
+                        :error="priorityError"
                     />
 
                     <DatePickerForm
@@ -107,25 +116,25 @@
                         v-model="dueDate"
                     />
                 </div>
+            </div>
 
-                <div class="flex flex-row self-end gap-3 mt-2">
-                    <BaseBtn
-                        label="Cancel"
-                        textColor="text-[#0F172A]"
-                        bgColor="bg-transparent"
-                        hoverBg="hover:bg-gray-100"
-                        type="button"
-                        @click="handleClose"
-                    />
-                    <BaseBtn
-                        label="Save"
-                        textColor="text-[#FFFFFF]"
-                        bgColor="bg-[#0F172A]"
-                        hoverBg="hover:bg-[#0F172A]/85"
-                        type="submit"
-                        @click="handleConfirm"
-                    />
-                </div>
+            <div class="flex flex-row self-end gap-3 mt-6">
+                <BaseBtn
+                    label="Cancel"
+                    textColor="text-[#0F172A]"
+                    bgColor="bg-transparent"
+                    hoverBg="hover:bg-gray-100"
+                    type="button"
+                    @click="handleClose"
+                />
+                <BaseBtn
+                    label="Save"
+                    textColor="text-[#FFFFFF]"
+                    bgColor="bg-[#0F172A]"
+                    hoverBg="hover:bg-[#0F172A]/85"
+                    type="submit"
+                    @click="handleConfirm"
+                />
             </div>
         </div>
     </BaseModal>

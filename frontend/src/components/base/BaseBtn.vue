@@ -5,7 +5,8 @@
         textColor: string,
         bgColor: string,
         hoverBg?: string,
-        type?: 'button' | 'submit' | 'reset'
+        type?: 'button' | 'submit' | 'reset',
+        borderColor?: string
     }>()
 
     const emit = defineEmits<{
@@ -21,12 +22,13 @@
             textColor,
             bgColor,
             hoverBg,
-            'flex flex-row font-inter font-normal lg:text-[20px] px-3 rounded-lg items-center gap-2 cursor-pointer'
+            borderColor,
+            'flex flex-row rounded-lg items-center gap-2 cursor-pointer px-3 py-2 w-fit h-fit border'
         ]"
     >
         <i v-if="icon" :class="icon" />
 
-        <span class="hidden md:block">
+        <span class="font-inter font-normal lg:text-[20px] ">
             {{ label }} 
         </span>
     </button>

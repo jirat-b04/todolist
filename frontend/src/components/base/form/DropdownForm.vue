@@ -1,6 +1,6 @@
 <script setup lang="ts">
 defineProps<{
-    title: string
+    title?: string
     options: { label: string; value: string }[]
     placeholder?: string
     disabled?: boolean
@@ -25,7 +25,7 @@ defineEmits<{
                    focus:ring-2 focus:ring-black transition bg-white
                    disabled:opacity-50 disabled:cursor-not-allowed"
         >
-            <option value="" disabled>{{ placeholder ?? 'Select...' }}</option>
+            <option v-if="placeholder" value="" disabled :selected="!modelValue">{{ placeholder }}</option>
             <option v-for="opt in options" :key="opt.value" :value="opt.value">
                 {{ opt.label }}
             </option>
