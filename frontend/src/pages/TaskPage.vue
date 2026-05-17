@@ -7,7 +7,7 @@
     import { useTaskStore } from '../composables/useTaskStore'
     import type { Task, TaskStatus, TaskPriority } from '../types/task'
 
-    const { tasks, addTask } = useTaskStore()
+    const { tasks, addTask, updateTask } = useTaskStore()
 
     const isFormOpen   = ref(false)
     const defaultStatus = ref<TaskStatus>('todo')
@@ -42,6 +42,11 @@
         })
     }
 
+    function handleDrop(taskId: string, newStatus: TaskStatus) {
+        const task = tasks.value.find(t => t.id === taskId)
+        if (task && task.status !== newStatus) updateTask(taskId, { status: newStatus })
+    }
+
     function openFormForStatus(status: TaskStatus) {
         defaultStatus.value = status
         isFormOpen.value    = true
@@ -63,7 +68,7 @@
     const statusFilterOptions = [
         { label: 'All',   value: 'all'   },
         { label: 'Todo',  value: 'todo'  },
-        { label: 'Doing', value: 'doing' },
+        { label: 'In Progress', value: 'doing' },
         { label: 'Done',  value: 'done'  },
     ]
 
@@ -148,6 +153,7 @@
                     :status="status"
                     :tasks="tasksForColumn(status)"
                     @click-task="selectedTask = $event"
+                    @drop-task="handleDrop($event, status)"
                 />
             </div>
         </main>
