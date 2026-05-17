@@ -1,35 +1,26 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+defineProps<{
+    title: string
+    placeholder?: string
+    type?: string
+    disabled?: boolean
+    error?: string
+    modelValue: string
+}>()
 
-    const props = defineProps<{
-        title: string
-        placeholder?: string
-        type?: string
-        disabled?: boolean
-        error?: string
-        isOpen: boolean
-    }>()
-
-    const emit = defineEmits<{
-        (e: 'submit', value: string): void
-    }>()
-
-    const inputValue = ref('')
-
-    watch(() => props.isOpen, (val) => {
-        if (val) inputValue.value = ''
-    })
+defineEmits<{
+    (e: 'update:modelValue', value: string): void
+}>()
 </script>
 
 <template>
-    <div class="flex flex-col gap-4 w-full">
-        <span class="font-inter font-semibold text-[20px]">
-            {{ title }}
-        </span>
+    <div class="flex flex-col gap-2 w-full">
+        <span class="font-inter font-semibold text-[16px]">{{ title }}</span>
 
         <input
             :type="type ?? 'text'"
-            v-model="inputValue"
+            :value="modelValue"
+            @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
             :placeholder="placeholder"
             :disabled="disabled"
             class="border border-black rounded-lg px-3 py-2 font-inter font-normal text-[16px] outline-none
@@ -37,8 +28,6 @@ import { ref, watch } from 'vue'
                    disabled:opacity-50 disabled:cursor-not-allowed"
         />
 
-        <span v-if="error" class="text-red-500 text-sm font-inter">
-            {{ error }}
-        </span>
+        <span v-if="error" class="text-red-500 text-sm font-inter">{{ error }}</span>
     </div>
 </template>
