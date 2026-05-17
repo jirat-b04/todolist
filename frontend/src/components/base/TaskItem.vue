@@ -1,11 +1,9 @@
 <script setup lang="ts">
-    import Header from '../layout/Header.vue';
     import BadgeLabel from './BadgeLabel.vue';
 
     defineProps<{
         title: string
         titleColor: string
-
         badges: {
             label: string
             labelColor: string
@@ -21,14 +19,11 @@
 <template>
     <button
         @click="emit('click')"
-        class="w-70 bg-[#FFFFFF] border rounded-md p-2 cursor-pointer items-start hover:bg-[#fafafa]"
+        class="w-full bg-[#FFFFFF] border rounded-md p-2 cursor-pointer items-start hover:bg-[#fafafa] text-left"
     >
-        <Header
-            :title="title"
-            :titleColor="titleColor"
-        />
-        
-        <div class="flex flex-row mt-4 gap-2">
+        <span :class="[titleColor, 'font-inter font-semibold text-[20px]']">{{ title }}</span>
+
+        <div class="flex flex-row mt-4 gap-2 flex-wrap">
             <BadgeLabel
                 v-for="badge in badges"
                 :key="badge.label"
