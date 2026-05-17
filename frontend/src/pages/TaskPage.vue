@@ -4,17 +4,24 @@
     import KanbanColumn from '../components/feat/KanbanColumn.vue'
     import TaskForm from '../components/feat/modal/TaskForm.vue'
     import TaskDetail from '../components/feat/TaskDetail.vue'
+    import ModalConfirm from '../components/feat/modal/ModalConfirm.vue'
     import { useTaskStore } from '../composables/useTaskStore'
     import type { Task, TaskStatus, TaskPriority } from '../types/task'
 
-    const { tasks, addTask, updateTask } = useTaskStore()
+    const { tasks, addTask, updateTask, removeTask } = useTaskStore()
 
-    const isFormOpen   = ref(false)
+    const isFormOpen    = ref(false)
     const defaultStatus = ref<TaskStatus>('todo')
     const selectedTask  = ref<Task | null>(null)
+    const taskToDelete  = ref<Task | null>(null)
 
-    const filterStatus = ref<'all' | TaskStatus>('all')
+    const filterStatus   = ref<'all' | TaskStatus>('all')
     const filterPriority = ref<'any' | TaskPriority>('any')
+    const sortBy         = ref<'none' | 'priority' | 'dueDate'>('none')
+
+    const priorityOrder: Record<TaskPriority, number> = {
+        urgent: 0, high: 1, medium: 2, low: 3,
+    }
 
     const allStatuses: TaskStatus[] = ['todo', 'doing', 'done']
 
@@ -35,11 +42,32 @@
     )
 
     function tasksForColumn(status: TaskStatus) {
-        return tasks.value.filter(t => {
+        const filtered = tasks.value.filter(t => {
             const matchStatus   = t.status === status
             const matchPriority = filterPriority.value === 'any' || t.priority === filterPriority.value
             return matchStatus && matchPriority
         })
+
+        if (sortBy.value === 'priority') {
+            return [...filtered].sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority])
+        }
+        if (sortBy.value === 'dueDate') {
+            return [...filtered].sort((a, b) => {
+                if (!a.dueDate && !b.dueDate) return 0
+                if (!a.dueDate) return 1
+                if (!b.dueDate) return -1
+                return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+            })
+        }
+        return filtered
+    }
+
+    function confirmDelete() {
+        if (taskToDelete.value) {
+            removeTask(taskToDelete.value.id)
+            if (selectedTask.value?.id === taskToDelete.value.id) selectedTask.value = null
+            taskToDelete.value = null
+        }
     }
 
     function handleDrop(taskId: string, newStatus: TaskStatus) {
@@ -129,10 +157,17 @@
                         </option>
                     </select>
 
-                    <div class="flex items-center gap-1.5 text-sm font-inter text-gray-500 cursor-pointer hover:text-gray-800 transition ml-2 border border-gray-200 rounded-md px-2 py-1 bg-white">
-                        <i class="pi pi-sort-alt text-xs" />
-                        <span>Sort by priority</span>
-                        <i class="pi pi-chevron-down text-xs" />
+                    <div class="flex items-center gap-1.5 ml-2">
+                        <i class="pi pi-sort-alt text-xs text-gray-500" />
+                        <span class="font-inter text-sm text-gray-500">Sort by</span>
+                        <select
+                            v-model="sortBy"
+                            class="border border-gray-200 rounded-md px-2 py-1 text-sm font-inter bg-white outline-none focus:ring-1 focus:ring-gray-400"
+                        >
+                            <option value="none">None</option>
+                            <option value="priority">Priority</option>
+                            <option value="dueDate">Due date</option>
+                        </select>
                     </div>
                 </div>
 
@@ -153,6 +188,7 @@
                     :status="status"
                     :tasks="tasksForColumn(status)"
                     @click-task="selectedTask = $event"
+                    @delete-task="taskToDelete = $event"
                     @drop-task="handleDrop($event, status)"
                 />
             </div>
@@ -168,6 +204,13 @@
         <TaskDetail
             :task="selectedTask"
             @close="selectedTask = null"
+        />
+
+        <ModalConfirm
+            :visible="taskToDelete !== null"
+            :message="`Delete &quot;${taskToDelete?.title}&quot;? This cannot be undone.`"
+            @close="taskToDelete = null"
+            @confirm="confirmDelete"
         />
     </div>
 </template>

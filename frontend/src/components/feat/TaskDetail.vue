@@ -36,7 +36,10 @@
 
     function formatDate(dateStr: string) {
         const date = new Date(dateStr + 'T00:00:00')
-        return date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+        const dd   = String(date.getDate()).padStart(2, '0')
+        const mm   = String(date.getMonth() + 1).padStart(2, '0')
+        const yyyy = date.getFullYear()
+        return `${dd}/${mm}/${yyyy}`
     }
 
     const props = defineProps<{ task: Task | null }>()
