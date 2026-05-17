@@ -4,9 +4,9 @@
     import type { Task } from '../../types/task'
 
     const columnConfig: Record<Task['status'], { label: string; dotColor: string }> = {
-        todo:  { label: 'Todo',  dotColor: 'bg-gray-800'  },
+        todo:  { label: 'Todo',        dotColor: 'bg-gray-800'  },
         doing: { label: 'In Progress', dotColor: 'bg-blue-500'  },
-        done:  { label: 'Done',  dotColor: 'bg-green-500' },
+        done:  { label: 'Done',        dotColor: 'bg-green-500' },
     }
 
     const statusBadge: Record<Task['status'], { labelColor: string; bgColor: string }> = {
@@ -24,7 +24,10 @@
 
     function formatDate(dateStr: string) {
         const date = new Date(dateStr + 'T00:00:00')
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        const dd   = String(date.getDate()).padStart(2, '0')
+        const mm   = String(date.getMonth() + 1).padStart(2, '0')
+        const yyyy = date.getFullYear()
+        return `${dd}/${mm}/${yyyy}`
     }
 
     function buildBadges(task: Task) {
@@ -59,6 +62,7 @@
 
     const emit = defineEmits<{
         (e: 'clickTask', task: Task): void
+        (e: 'deleteTask', task: Task): void
         (e: 'dropTask', taskId: string): void
     }>()
 
@@ -116,6 +120,8 @@
                     titleColor="text-black"
                     :badges="buildBadges(task)"
                     @click="emit('clickTask', task)"
+                    @detail="emit('clickTask', task)"
+                    @delete="emit('deleteTask', task)"
                 />
             </div>
         </div>
