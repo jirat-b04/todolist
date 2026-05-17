@@ -5,6 +5,8 @@
     import TaskForm from '../components/feat/modal/TaskForm.vue'
     import TaskDetail from '../components/feat/TaskDetail.vue'
     import ModalConfirm from '../components/feat/modal/ModalConfirm.vue'
+    import BaseBtn from '../components/base/BaseBtn.vue'
+    import DropdownForm from '../components/base/form/DropdownForm.vue'
     import { useTaskStore } from '../composables/useTaskStore'
     import type { Task, TaskStatus, TaskPriority } from '../types/task'
 
@@ -15,9 +17,9 @@
     const selectedTask  = ref<Task | null>(null)
     const taskToDelete  = ref<Task | null>(null)
 
-    const filterStatus   = ref<'all' | TaskStatus>('all')
-    const filterPriority = ref<'any' | TaskPriority>('any')
-    const sortBy         = ref<'none' | 'priority' | 'dueDate'>('none')
+    const filterStatus   = ref('all')
+    const filterPriority = ref('any')
+    const sortBy         = ref('none')
 
     const priorityOrder: Record<TaskPriority, number> = {
         urgent: 0, high: 1, medium: 2, low: 3,
@@ -38,7 +40,7 @@
     )
 
     const displayedStatuses = computed<TaskStatus[]>(() =>
-        filterStatus.value === 'all' ? allStatuses : [filterStatus.value]
+        filterStatus.value === 'all' ? allStatuses : [filterStatus.value as TaskStatus]
     )
 
     function tasksForColumn(status: TaskStatus) {
@@ -70,9 +72,9 @@
         }
     }
 
-    function handleDrop(taskId: string, newStatus: TaskStatus) {
+    function handleDrop(taskId: string, targetStatus: TaskStatus) {
         const task = tasks.value.find(t => t.id === taskId)
-        if (task && task.status !== newStatus) updateTask(taskId, { status: newStatus })
+        if (task && task.status !== targetStatus) updateTask(taskId, { status: targetStatus })
     }
 
     function openFormForStatus(status: TaskStatus) {
@@ -93,13 +95,6 @@
         })
     }
 
-    const statusFilterOptions = [
-        { label: 'All',   value: 'all'   },
-        { label: 'Todo',  value: 'todo'  },
-        { label: 'In Progress', value: 'doing' },
-        { label: 'Done',  value: 'done'  },
-    ]
-
     const priorityFilterOptions = [
         { label: 'Any',    value: 'any'    },
         { label: 'Urgent', value: 'urgent' },
@@ -107,15 +102,21 @@
         { label: 'Medium', value: 'medium' },
         { label: 'Low',    value: 'low'    },
     ]
+
+    const sortByOptions = [
+        { label: 'None',     value: 'none'     },
+        { label: 'Priority', value: 'priority' },
+        { label: 'Due date', value: 'dueDate'  },
+    ]
 </script>
 
 <template>
     <div class="min-h-screen bg-gray-50 flex flex-col">
-        <main class="flex-1 px-8 py-6 flex flex-col gap-6">
+        <main class="flex-1 px-4 py-4 md:px-8 md:py-6 flex flex-col gap-4 md:gap-6">
             <!-- Title -->
             <div>
-                <h1 class="font-inter font-bold text-[32px] text-gray-900">To Do List</h1>
-                <p class="font-inter text-gray-400 text-[15px]">{{ today }}</p>
+                <h1 class="font-inter font-bold text-[24px] md:text-[32px] text-gray-900">To Do List</h1>
+                <p class="font-inter text-gray-400 text-[13px] md:text-[15px]">{{ today }}</p>
             </div>
 
             <!-- Stats -->
@@ -135,53 +136,37 @@
             </div>
 
             <!-- Filters -->
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2 flex-wrap">
-                    <span class="font-inter text-sm text-gray-500">Status</span>
-                    <select
-                        v-model="filterStatus"
-                        class="border border-gray-200 rounded-md px-2 py-1 text-sm font-inter bg-white outline-none focus:ring-1 focus:ring-gray-400"
-                    >
-                        <option v-for="opt in statusFilterOptions" :key="opt.value" :value="opt.value">
-                            {{ opt.label }}
-                        </option>
-                    </select>
-
-                    <span class="font-inter text-sm text-gray-500 ml-2">Priority</span>
-                    <select
-                        v-model="filterPriority"
-                        class="border border-gray-200 rounded-md px-2 py-1 text-sm font-inter bg-white outline-none focus:ring-1 focus:ring-gray-400"
-                    >
-                        <option v-for="opt in priorityFilterOptions" :key="opt.value" :value="opt.value">
-                            {{ opt.label }}
-                        </option>
-                    </select>
-
-                    <div class="flex items-center gap-1.5 ml-2">
-                        <i class="pi pi-sort-alt text-xs text-gray-500" />
-                        <span class="font-inter text-sm text-gray-500">Sort by</span>
-                        <select
+            <div class="flex flex-col sm:flex-row sm:items-end gap-3 sm:justify-between">
+                <div class="flex flex-col sm:flex-row sm:items-end gap-3 flex-wrap">
+                    <div class="w-full sm:w-36">
+                        <DropdownForm
+                            title="Priority"
+                            :options="priorityFilterOptions"
+                            v-model="filterPriority"
+                        />
+                    </div>
+                    <div class="w-full sm:w-36">
+                        <DropdownForm
+                            title="Sort by"
+                            :options="sortByOptions"
                             v-model="sortBy"
-                            class="border border-gray-200 rounded-md px-2 py-1 text-sm font-inter bg-white outline-none focus:ring-1 focus:ring-gray-400"
-                        >
-                            <option value="none">None</option>
-                            <option value="priority">Priority</option>
-                            <option value="dueDate">Due date</option>
-                        </select>
+                        />
                     </div>
                 </div>
 
-                <button
+                <BaseBtn
+                    label="Add task"
+                    icon="pi pi-plus"
+                    textColor="text-white"
+                    bgColor="bg-[#1a2d5a]"
+                    hoverBg="hover:bg-[#1a2d5a]/90"
+                    type="button"
                     @click="openFormForStatus('todo')"
-                    class="flex items-center gap-1.5 bg-[#1a2d5a] text-white text-sm font-inter font-medium px-3 py-2 rounded-md hover:bg-[#1a2d5a]/90 transition"
-                >
-                    <span class="text-base leading-none">+</span>
-                    <span>Add task</span>
-                </button>
+                />
             </div>
 
             <!-- Kanban Board -->
-            <div class="flex gap-6 overflow-x-auto pb-4">
+            <div class="flex flex-col gap-4 md:flex-row md:gap-6 md:overflow-x-auto pb-4">
                 <KanbanColumn
                     v-for="status in displayedStatuses"
                     :key="status"
@@ -189,7 +174,7 @@
                     :tasks="tasksForColumn(status)"
                     @click-task="selectedTask = $event"
                     @delete-task="taskToDelete = $event"
-                    @drop-task="handleDrop($event, status)"
+                    @drop-task="handleDrop"
                 />
             </div>
         </main>

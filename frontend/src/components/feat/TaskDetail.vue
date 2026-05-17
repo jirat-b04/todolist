@@ -9,16 +9,16 @@
     import type { Task, TaskStatus, TaskPriority } from '../../types/task'
 
     const statusBadge: Record<Task['status'], { label: string; labelColor: string; bgColor: string }> = {
-        todo:  { label: 'Todo',  labelColor: 'text-white', bgColor: 'bg-[#3B4DE0]' },
-        doing: { label: 'In Progress', labelColor: 'text-white', bgColor: 'bg-[#3B4DE0]' },
-        done:  { label: 'Done',  labelColor: 'text-white', bgColor: 'bg-[#22C55E]' },
+        todo:  { label: 'Todo',        labelColor: 'text-black', bgColor: 'bg-gray-200'  },
+        doing: { label: 'In Progress', labelColor: 'text-black', bgColor: 'bg-blue-500'  },
+        done:  { label: 'Done',        labelColor: 'text-black', bgColor: 'bg-green-500' },
     }
 
     const priorityBadge: Record<Task['priority'], { label: string; labelColor: string; bgColor: string }> = {
-        urgent: { label: 'Urgent', labelColor: 'text-white',    bgColor: 'bg-[#F97316]' },
-        high:   { label: 'High',   labelColor: 'text-black',    bgColor: 'bg-[#FACC15]' },
-        medium: { label: 'Medium', labelColor: 'text-gray-700', bgColor: 'bg-[#E5E7EB]' },
-        low:    { label: 'Low',    labelColor: 'text-gray-500', bgColor: 'bg-[#F3F4F6]' },
+        urgent: { label: 'Urgent', labelColor: 'text-black', bgColor: 'bg-red-500'    },
+        high:   { label: 'High',   labelColor: 'text-black', bgColor: 'bg-orange-500' },
+        medium: { label: 'Medium', labelColor: 'text-black', bgColor: 'bg-yellow-400' },
+        low:    { label: 'Low',    labelColor: 'text-black', bgColor: 'bg-blue-200'   },
     }
 
     const statusOptions = [
@@ -54,8 +54,9 @@
     const editPriority = ref<TaskPriority | ''>('')
     const editDueDate  = ref('')
 
-    watch(() => props.task, () => {
+    watch(() => props.task, (val) => {
         isEditing.value = false
+        document.body.style.overflow = val ? 'hidden' : ''
     })
 
     function startEdit() {
@@ -93,7 +94,7 @@
     <Transition name="slide">
         <div
             v-if="task"
-            class="fixed inset-y-0 right-0 w-96 bg-white shadow-2xl z-50 flex flex-col"
+            class="fixed inset-y-0 right-0 w-full sm:w-96 bg-white shadow-2xl z-50 flex flex-col"
         >
             <!-- Header -->
             <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
@@ -144,7 +145,7 @@
                 <InputForm title="Title" placeholder="Task title" v-model="editTitle" />
                 <InputForm title="Description" placeholder="More detail (optional)" v-model="editDesc" />
 
-                <div class="flex gap-4">
+                <div class="flex flex-col sm:flex-row gap-4">
                     <DropdownForm
                         title="Status"
                         placeholder="Select"
